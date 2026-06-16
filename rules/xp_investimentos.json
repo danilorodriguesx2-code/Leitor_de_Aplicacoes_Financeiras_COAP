@@ -1,0 +1,62 @@
+{
+  "rule_key": "xp_investimentos",
+  "banco": "XP",
+  "produto": "XP Investimentos",
+  "pessoa": 421,
+  "complemento": "XP Investimentos",
+  "cnpj": "02332886000104",
+  "conta_aplicacao": "1.1.01.03.007",
+  "conta_aplicacao_desc": "Aplicacao Financeira XP",
+  "tem_irrf": false,
+  "tem_iof": false,
+  "indexador": "Renda Fixa Consolidada",
+  "formulas": {
+    "rendimento": "ganho_financeiro"
+  },
+  "formulas_desc": {
+    "rendimento": "Rendimento = coluna 'Ganho Financeiro' do mes na Evolucao Patrimonial. IRRF/IOF lancados apenas quando pagos (colunas IR/IOF)."
+  },
+  "campos_calculo": {
+    "ganho_financeiro": {
+      "label": "Ganho Financeiro do mes",
+      "source": "ganho_financeiro",
+      "manual": false
+    }
+  },
+  "lancamentos": {
+    "rendimento": {
+      "historico": 591,
+      "historico_desc": "Rendimentos a Apropriar",
+      "debito": "1.1.01.03.097",
+      "debito_cod_red": "20",
+      "debito_desc": "Rendimentos a Apropriar",
+      "credito": "3.1.05.01.002",
+      "credito_cod_red": "476",
+      "credito_desc": "Juros de Aplicacoes Financeiras"
+    }
+  },
+  "operacoes_internas": {
+    "resgate_aplicacao": {
+      "operacao": "Transf entre Contas",
+      "campo_extrato": "Movimentacoes"
+    },
+    "rendimentos": {
+      "operacao": "30.001",
+      "desc": "Receita Eventual",
+      "carteira": "1.03.002",
+      "campo": "Ganho Financeiro"
+    },
+    "irrf": {
+      "operacao": "30.515",
+      "desc": "Lcto Despesas",
+      "carteira": "2.02.005",
+      "campo": "IR"
+    },
+    "iof": {
+      "operacao": "30.514",
+      "desc": "Lcto Despesas",
+      "carteira": "2.02.005",
+      "campo": "IOF"
+    }
+  }
+}

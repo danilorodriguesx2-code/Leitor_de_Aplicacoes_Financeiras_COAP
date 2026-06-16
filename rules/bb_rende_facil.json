@@ -1,0 +1,115 @@
+{
+  "rule_key": "bb_rende_facil",
+  "banco": "BB",
+  "produto": "Rende Facil",
+  "pessoa": 24,
+  "complemento": "BB Rende Facil",
+  "cnpj": "00000000700177",
+  "conta_aplicacao": "1.1.01.03.006",
+  "conta_aplicacao_desc": "Aplicacao Financeira BB",
+  "tem_irrf": true,
+  "tem_iof": true,
+  "indexador": "Compromissada",
+  "formulas": {
+    "rendimento": "rendimento_no_mes",
+    "irrf": "ir_saldo_final_atual - ir_saldo_final_anterior",
+    "iof": "iof_saldo_final_atual - iof_saldo_final_anterior"
+  },
+  "formulas_desc": {
+    "rendimento": "Rendimento = campo 'Rendimento no mes' do Resumo do mes",
+    "irrf": "Provisao IRRF = IR (linha Saldo Final atual) - IR (linha Saldo Final mes anterior)",
+    "iof": "Provisao IOF = IOF (linha Saldo Final atual) - IOF (linha Saldo Final mes anterior)"
+  },
+  "campos_calculo": {
+    "rendimento_no_mes": {
+      "label": "Rendimento no mes (Resumo)",
+      "source": "rendimento_no_mes",
+      "manual": false
+    },
+    "ir_saldo_final_atual": {
+      "label": "IR Saldo Final (atual)",
+      "source": "irrf_saldo_final_atual",
+      "manual": false
+    },
+    "ir_saldo_final_anterior": {
+      "label": "IR Saldo Final (mes anterior)",
+      "source": "irrf_saldo_final_anterior",
+      "manual": true
+    },
+    "iof_saldo_final_atual": {
+      "label": "IOF Saldo Final (atual)",
+      "source": "iof_saldo_final_atual",
+      "manual": false
+    },
+    "iof_saldo_final_anterior": {
+      "label": "IOF Saldo Final (mes anterior)",
+      "source": "iof_saldo_final_anterior",
+      "manual": true
+    }
+  },
+  "lancamentos": {
+    "rendimento": {
+      "historico": 591,
+      "historico_desc": "Rendimentos a Apropriar",
+      "debito": "1.1.01.03.097",
+      "debito_cod_red": "20",
+      "debito_desc": "Rendimentos a Apropriar",
+      "credito": "3.1.05.01.002",
+      "credito_cod_red": "476",
+      "credito_desc": "Juros de Aplicacoes Financeiras"
+    },
+    "irrf": {
+      "historico": 592,
+      "historico_desc": "Provisao IRRF",
+      "positivo": {
+        "debito": "1.1.03.04.025",
+        "debito_cod_red": "86",
+        "credito": "1.1.01.03.098",
+        "credito_cod_red": "21"
+      },
+      "estorno": {
+        "debito": "1.1.01.03.098",
+        "debito_cod_red": "21",
+        "credito": "1.1.03.04.025",
+        "credito_cod_red": "86"
+      }
+    },
+    "iof": {
+      "historico": 593,
+      "historico_desc": "Provisao IOF",
+      "positivo": {
+        "debito": "1.1.05.01.003",
+        "debito_cod_red": "116",
+        "credito": "1.1.01.03.099",
+        "credito_cod_red": "22"
+      },
+      "estorno": {
+        "debito": "1.1.01.03.099",
+        "debito_cod_red": "22",
+        "credito": "1.1.05.01.003",
+        "credito_cod_red": "116"
+      }
+    }
+  },
+  "operacoes_internas": {
+    "resgate_aplicacao": {
+      "operacao": "Transf entre Contas",
+      "campo_extrato": "Valor movimentacao resgate"
+    },
+    "rendimentos": {
+      "operacao": "30.001",
+      "desc": "Receita Eventual",
+      "carteira": "1.03.002"
+    },
+    "irrf": {
+      "operacao": "30.515",
+      "desc": "Lcto Despesas",
+      "carteira": "2.02.005"
+    },
+    "iof": {
+      "operacao": "30.514",
+      "desc": "Lcto Despesas",
+      "carteira": "2.02.005"
+    }
+  }
+}

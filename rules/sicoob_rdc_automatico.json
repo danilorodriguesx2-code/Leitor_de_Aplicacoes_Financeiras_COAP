@@ -1,0 +1,67 @@
+{
+  "rule_key": "sicoob_rdc_automatico",
+  "banco": "Sicoob",
+  "produto": "RDC Automatico",
+  "pessoa": 23,
+  "complemento": "Sicoob RDC Automatico",
+  "cnpj": "03632872001728",
+  "conta_aplicacao": "1.1.01.03.004",
+  "conta_aplicacao_desc": "Aplicacao Financeira Sicoob",
+  "tem_irrf": false,
+  "tem_iof": false,
+  "indexador": "CDI",
+  "formulas": {
+    "rendimento": "apropriacao_cm_bruta - estorno_rendimentos"
+  },
+  "formulas_desc": {
+    "rendimento": "Rendimento = Apropriacao de CM (bruta) - Estornos de rendimentos na carencia"
+  },
+  "campos_calculo": {
+    "apropriacao_cm_bruta": {
+      "label": "Soma das apropriacoes de CM (bruta)",
+      "source": "apropriacao_cm_bruta",
+      "manual": false
+    },
+    "estorno_rendimentos": {
+      "label": "Estornos de rendimentos na carencia",
+      "source": "estorno_rendimentos",
+      "manual": false
+    }
+  },
+  "lancamentos": {
+    "rendimento": {
+      "historico": 591,
+      "historico_desc": "Rendimentos a Apropriar",
+      "debito": "1.1.01.03.097",
+      "debito_cod_red": "20",
+      "debito_desc": "Rendimentos a Apropriar",
+      "credito": "3.1.05.01.002",
+      "credito_cod_red": "476",
+      "credito_desc": "Juros de Aplicacoes Financeiras"
+    }
+  },
+  "operacoes_internas": {
+    "resgate_aplicacao": {
+      "operacao": "Transf entre Contas",
+      "campo_extrato": "Valor movimentacao resgate"
+    },
+    "rendimentos": {
+      "operacao": "30.001",
+      "desc": "Receita Eventual",
+      "carteira": "1.03.002",
+      "campo": "Capitalizacao de CM"
+    },
+    "irrf": {
+      "operacao": "30.515",
+      "desc": "Lcto Despesas",
+      "carteira": "1.03.002",
+      "campo": "Retencao IRRF"
+    },
+    "iof": {
+      "operacao": "30.514",
+      "desc": "Lcto Despesas",
+      "carteira": "2.02.005",
+      "campo": "Retencao IOF"
+    }
+  }
+}

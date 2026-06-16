@@ -1,0 +1,125 @@
+{
+  "rule_key": "itau_aplic_aut_mais",
+  "banco": "Itau",
+  "produto": "Aplic Aut Mais",
+  "pessoa": 25,
+  "complemento": "Itau Aut Aplic Mais",
+  "cnpj": "60701190280204",
+  "conta_aplicacao": "1.1.01.03.003",
+  "conta_aplicacao_desc": "Aplicacao Financeira Itau",
+  "tem_irrf": true,
+  "tem_iof": true,
+  "indexador": "CDB Automatico",
+  "formulas": {
+    "rendimento": "rend_brutos_pagos_mes - saldo_bruto_render_anterior + saldo_bruto_render_atual",
+    "irrf": "prov_irrf_atual - prov_irrf_anterior",
+    "iof": "prov_iof_atual - prov_iof_anterior"
+  },
+  "formulas_desc": {
+    "rendimento": "Rendimento = Rendimentos Brutos Pagos no Mes - (Saldo Bruto - Principal)[1o dia] + (Saldo Bruto - Principal)[ultimo dia]",
+    "irrf": "Provisao IRRF = Prov IRRF (ultimo dia) - Prov IRRF (1o dia / mes anterior)",
+    "iof": "Provisao IOF = Prov IOF (ultimo dia) - Prov IOF (1o dia / mes anterior)"
+  },
+  "campos_calculo": {
+    "rend_brutos_pagos_mes": {
+      "label": "Rendimentos Brutos Pagos no Mes (Acum. Mes)",
+      "source": "rendimentos_pagos_mes",
+      "manual": false
+    },
+    "saldo_bruto_render_anterior": {
+      "label": "(Saldo Bruto - Principal) 1o dia",
+      "source": "render_anterior",
+      "manual": false
+    },
+    "saldo_bruto_render_atual": {
+      "label": "(Saldo Bruto - Principal) ultimo dia",
+      "source": "render_atual",
+      "manual": false
+    },
+    "prov_irrf_atual": {
+      "label": "Prov IRRF (ultimo dia)",
+      "source": "provisao_irrf_atual",
+      "manual": false
+    },
+    "prov_irrf_anterior": {
+      "label": "Prov IRRF (1o dia)",
+      "source": "provisao_irrf_anterior",
+      "manual": false
+    },
+    "prov_iof_atual": {
+      "label": "Prov IOF (ultimo dia)",
+      "source": "provisao_iof_atual",
+      "manual": false
+    },
+    "prov_iof_anterior": {
+      "label": "Prov IOF (1o dia)",
+      "source": "provisao_iof_anterior",
+      "manual": false
+    }
+  },
+  "lancamentos": {
+    "rendimento": {
+      "historico": 591,
+      "historico_desc": "Rendimentos a Apropriar",
+      "debito": "1.1.01.03.097",
+      "debito_cod_red": "20",
+      "debito_desc": "Rendimentos a Apropriar",
+      "credito": "3.1.05.01.002",
+      "credito_cod_red": "476",
+      "credito_desc": "Juros de Aplicacoes Financeiras"
+    },
+    "irrf": {
+      "historico": 592,
+      "historico_desc": "Provisao IRRF",
+      "positivo": {
+        "debito": "1.1.03.04.025",
+        "debito_cod_red": "86",
+        "credito": "1.1.01.03.098",
+        "credito_cod_red": "21"
+      },
+      "estorno": {
+        "debito": "1.1.01.03.098",
+        "debito_cod_red": "21",
+        "credito": "1.1.03.04.025",
+        "credito_cod_red": "86"
+      }
+    },
+    "iof": {
+      "historico": 593,
+      "historico_desc": "Provisao IOF",
+      "positivo": {
+        "debito": "1.1.05.01.003",
+        "debito_cod_red": "116",
+        "credito": "1.1.01.03.099",
+        "credito_cod_red": "22"
+      },
+      "estorno": {
+        "debito": "1.1.01.03.099",
+        "debito_cod_red": "22",
+        "credito": "1.1.05.01.003",
+        "credito_cod_red": "116"
+      }
+    }
+  },
+  "operacoes_internas": {
+    "resgate_aplicacao": {
+      "operacao": "Transf entre Contas",
+      "campo_extrato": "Valor movimentacao resgate"
+    },
+    "rendimentos": {
+      "operacao": "30.001",
+      "desc": "Receita Eventual",
+      "carteira": "1.03.002"
+    },
+    "irrf": {
+      "operacao": "30.515",
+      "desc": "Lcto Despesas",
+      "carteira": "2.02.005"
+    },
+    "iof": {
+      "operacao": "30.514",
+      "desc": "Lcto Despesas",
+      "carteira": "2.02.005"
+    }
+  }
+}

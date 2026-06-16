@@ -1,0 +1,125 @@
+{
+  "rule_key": "sicredi_automatico",
+  "banco": "Sicredi",
+  "produto": "Sicredinvest Automatico",
+  "pessoa": 22,
+  "complemento": "Sicredinvest Automatico",
+  "cnpj": "26555235001458",
+  "conta_aplicacao": "1.1.01.03.001",
+  "conta_aplicacao_desc": "Aplicacao Financeira Sicredi",
+  "tem_irrf": true,
+  "tem_iof": true,
+  "indexador": "CDI",
+  "formulas": {
+    "rendimento": "rend_pagos_mes - rend_prov_anterior + rend_prov_atual",
+    "irrf": "prov_irrf_atual - prov_irrf_anterior",
+    "iof": "prov_iof_atual - prov_iof_anterior"
+  },
+  "formulas_desc": {
+    "rendimento": "Rendimento = Rendimentos Pagos no Mes - Rend. Provisionados (mes anterior) + Rend. Provisionados (atual)",
+    "irrf": "Provisao IRRF = Provisao IRRF (atual) - Provisao IRRF (mes anterior)",
+    "iof": "Provisao IOF = Provisao IOF (atual) - Provisao IOF (mes anterior)"
+  },
+  "campos_calculo": {
+    "rend_pagos_mes": {
+      "label": "Rendimentos Pagos no Mes",
+      "source": "rendimentos_pagos_mes",
+      "manual": false
+    },
+    "rend_prov_anterior": {
+      "label": "Rendimentos Provisionados (mes anterior)",
+      "source": "rendimentos_provisionados_anterior",
+      "manual": true
+    },
+    "rend_prov_atual": {
+      "label": "Rendimentos Provisionados (atual)",
+      "source": "rendimentos_provisionados_atual",
+      "manual": false
+    },
+    "prov_irrf_atual": {
+      "label": "Provisao IRRF (atual)",
+      "source": "provisao_irrf_atual",
+      "manual": false
+    },
+    "prov_irrf_anterior": {
+      "label": "Provisao IRRF (mes anterior)",
+      "source": "provisao_irrf_anterior",
+      "manual": true
+    },
+    "prov_iof_atual": {
+      "label": "Provisao IOF (atual)",
+      "source": "provisao_iof_atual",
+      "manual": false
+    },
+    "prov_iof_anterior": {
+      "label": "Provisao IOF (mes anterior)",
+      "source": "provisao_iof_anterior",
+      "manual": true
+    }
+  },
+  "lancamentos": {
+    "rendimento": {
+      "historico": 591,
+      "historico_desc": "Rendimentos a Apropriar",
+      "debito": "1.1.01.03.097",
+      "debito_cod_red": "20",
+      "debito_desc": "Rendimentos a Apropriar",
+      "credito": "3.1.05.01.002",
+      "credito_cod_red": "476",
+      "credito_desc": "Juros de Aplicacoes Financeiras"
+    },
+    "irrf": {
+      "historico": 592,
+      "historico_desc": "Provisao IRRF",
+      "positivo": {
+        "debito": "1.1.03.04.025",
+        "debito_cod_red": "86",
+        "credito": "1.1.01.03.098",
+        "credito_cod_red": "21"
+      },
+      "estorno": {
+        "debito": "1.1.01.03.098",
+        "debito_cod_red": "21",
+        "credito": "1.1.03.04.025",
+        "credito_cod_red": "86"
+      }
+    },
+    "iof": {
+      "historico": 593,
+      "historico_desc": "Provisao IOF",
+      "positivo": {
+        "debito": "1.1.05.01.003",
+        "debito_cod_red": "116",
+        "credito": "1.1.01.03.099",
+        "credito_cod_red": "22"
+      },
+      "estorno": {
+        "debito": "1.1.01.03.099",
+        "debito_cod_red": "22",
+        "credito": "1.1.05.01.003",
+        "credito_cod_red": "116"
+      }
+    }
+  },
+  "operacoes_internas": {
+    "resgate_aplicacao": {
+      "operacao": "Transf entre Contas",
+      "campo_extrato": "Valor movimentacao resgate"
+    },
+    "rendimentos": {
+      "operacao": "30.001",
+      "desc": "Receita Eventual",
+      "carteira": "1.03.002"
+    },
+    "irrf": {
+      "operacao": "30.515",
+      "desc": "Lcto Despesas",
+      "carteira": "2.02.005"
+    },
+    "iof": {
+      "operacao": "30.514",
+      "desc": "Lcto Despesas",
+      "carteira": "2.02.005"
+    }
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "rule_key": "itau_itauvest",
+  "banco": "Itau",
+  "produto": "Itauvest",
+  "pessoa": 25,
+  "complemento": "Itauvest",
+  "cnpj": "60701190280204",
+  "conta_aplicacao": "1.1.01.03.003",
+  "conta_aplicacao_desc": "Aplicacao Financeira Itau",
+  "tem_irrf": true,
+  "tem_iof": false,
+  "indexador": "Compromissada",
+  "formulas": {
+    "rendimento": "saldo_final_valor - saldo_anterior_valor + valor_creditado",
+    "irrf": "impostos_estimados_atual - impostos_estimados_anterior"
+  },
+  "formulas_desc": {
+    "rendimento": "Rendimento = Saldo Final Valor(*) - Saldo Anterior Valor(*) + Valor creditado/resgatado no mes",
+    "irrf": "Provisao IRRF = Impostos Estimados (atual) - Impostos Estimados (mes anterior)"
+  },
+  "campos_calculo": {
+    "saldo_final_valor": {
+      "label": "Saldo Final Valor(*) (atual)",
+      "source": "saldo_final_valor",
+      "manual": false
+    },
+    "saldo_anterior_valor": {
+      "label": "Saldo Anterior Valor(*) (inicio do mes)",
+      "source": "saldo_anterior_valor",
+      "manual": false
+    },
+    "valor_creditado": {
+      "label": "Valor creditado/resgatado no mes",
+      "source": "valor_creditado",
+      "manual": false
+    },
+    "impostos_estimados_atual": {
+      "label": "Impostos Estimados (atual)",
+      "source": "impostos_estimados_atual",
+      "manual": false
+    },
+    "impostos_estimados_anterior": {
+      "label": "Impostos Estimados (mes anterior)",
+      "source": "impostos_estimados_anterior",
+      "manual": true
+    }
+  },
+  "lancamentos": {
+    "rendimento": {
+      "historico": 591,
+      "historico_desc": "Rendimentos a Apropriar",
+      "debito": "1.1.01.03.097",
+      "debito_cod_red": "20",
+      "debito_desc": "Rendimentos a Apropriar",
+      "credito": "3.1.05.01.002",
+      "credito_cod_red": "476",
+      "credito_desc": "Juros de Aplicacoes Financeiras"
+    },
+    "irrf": {
+      "historico": 592,
+      "historico_desc": "Provisao IRRF",
+      "positivo": {
+        "debito": "1.1.03.04.025",
+        "debito_cod_red": "86",
+        "credito": "1.1.01.03.098",
+        "credito_cod_red": "21"
+      },
+      "estorno": {
+        "debito": "1.1.01.03.098",
+        "debito_cod_red": "21",
+        "credito": "1.1.03.04.025",
+        "credito_cod_red": "86"
+      }
+    }
+  },
+  "operacoes_internas": {
+    "resgate_aplicacao": {
+      "operacao": "Transf entre Contas",
+      "campo_extrato": "Valor movimentacao resgate"
+    },
+    "rendimentos": {
+      "operacao": "30.001",
+      "desc": "Receita Eventual",
+      "carteira": "1.03.002"
+    },
+    "irrf": {
+      "operacao": "30.515",
+      "desc": "Lcto Despesas",
+      "carteira": "2.02.005"
+    },
+    "iof": {
+      "operacao": "30.514",
+      "desc": "Lcto Despesas",
+      "carteira": "2.02.005"
+    }
+  }
+}

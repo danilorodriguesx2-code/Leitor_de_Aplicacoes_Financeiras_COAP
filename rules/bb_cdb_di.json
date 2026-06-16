@@ -1,0 +1,87 @@
+{
+  "rule_key": "bb_cdb_di",
+  "banco": "BB",
+  "produto": "CDB DI",
+  "pessoa": 24,
+  "complemento": "BB CDB",
+  "cnpj": "00000000700177",
+  "conta_aplicacao": "1.1.01.03.006",
+  "conta_aplicacao_desc": "Aplicacao Financeira BB",
+  "tem_irrf": true,
+  "tem_iof": false,
+  "indexador": "CDB DI",
+  "formulas": {
+    "rendimento": "rendimento_mensal",
+    "irrf": "ir_proj_atual - ir_proj_anterior"
+  },
+  "formulas_desc": {
+    "rendimento": "Rendimento = valor da linha 'Rendimento mensal' (valor juros)",
+    "irrf": "Provisao IRRF = IR proj. (mes atual) - IR proj. (mes anterior)"
+  },
+  "campos_calculo": {
+    "rendimento_mensal": {
+      "label": "Rendimento mensal (juros)",
+      "source": "rendimento_mensal",
+      "manual": false
+    },
+    "ir_proj_atual": {
+      "label": "IR proj. (atual)",
+      "source": "ir_proj_atual",
+      "manual": false
+    },
+    "ir_proj_anterior": {
+      "label": "IR proj. (mes anterior)",
+      "source": "ir_proj_anterior",
+      "manual": false
+    }
+  },
+  "lancamentos": {
+    "rendimento": {
+      "historico": 591,
+      "historico_desc": "Rendimentos a Apropriar",
+      "debito": "1.1.01.03.097",
+      "debito_cod_red": "20",
+      "debito_desc": "Rendimentos a Apropriar",
+      "credito": "3.1.05.01.002",
+      "credito_cod_red": "476",
+      "credito_desc": "Juros de Aplicacoes Financeiras"
+    },
+    "irrf": {
+      "historico": 592,
+      "historico_desc": "Provisao IRRF",
+      "positivo": {
+        "debito": "1.1.03.04.025",
+        "debito_cod_red": "86",
+        "credito": "1.1.01.03.098",
+        "credito_cod_red": "21"
+      },
+      "estorno": {
+        "debito": "1.1.01.03.098",
+        "debito_cod_red": "21",
+        "credito": "1.1.03.04.025",
+        "credito_cod_red": "86"
+      }
+    }
+  },
+  "operacoes_internas": {
+    "resgate_aplicacao": {
+      "operacao": "Transf entre Contas",
+      "campo_extrato": "Valor movimentacao resgate"
+    },
+    "rendimentos": {
+      "operacao": "30.001",
+      "desc": "Receita Eventual",
+      "carteira": "1.03.002"
+    },
+    "irrf": {
+      "operacao": "30.515",
+      "desc": "Lcto Despesas",
+      "carteira": "2.02.005"
+    },
+    "iof": {
+      "operacao": "30.514",
+      "desc": "Lcto Despesas",
+      "carteira": "2.02.005"
+    }
+  }
+}
