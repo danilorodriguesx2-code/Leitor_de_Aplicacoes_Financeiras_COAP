@@ -33,7 +33,7 @@
       "historico": 591,
       "historico_desc": "Rendimentos a Apropriar",
       "debito": "1.1.01.03.097", "debito_cod_red": "20", "debito_desc": "Rendimentos a Apropriar",
-      "credito": "3.1.05.01.002", "credito_cod_red": "476", "credito_desc": "Juros de Aplicacoes Financeiras"
+      "credito": "3.1.06.01.002", "credito_cod_red": "476", "credito_desc": "Juros de Aplicacoes Financeiras"
     },
     "irrf": {
       "historico": 592,

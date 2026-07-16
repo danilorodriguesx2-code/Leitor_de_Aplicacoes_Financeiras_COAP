@@ -12,13 +12,13 @@
   "indexador": "Compromissada",
   "formulas": {
     "rendimento": "rendimento_no_mes",
-    "irrf": "ir_saldo_final_atual - ir_saldo_final_anterior",
-    "iof": "iof_saldo_final_atual - iof_saldo_final_anterior"
+    "irrf": "irrf_retido_mes",
+    "iof": "iof_retido_mes"
   },
   "formulas_desc": {
     "rendimento": "Rendimento = campo 'Rendimento no mes' do Resumo do mes",
-    "irrf": "Provisao IRRF = IR (linha Saldo Final atual) - IR (linha Saldo Final mes anterior)",
-    "iof": "Provisao IOF = IOF (linha Saldo Final atual) - IOF (linha Saldo Final mes anterior)"
+    "irrf": "IRRF = IR retido sobre resgates no mes (Resumo)",
+    "iof": "IOF = IOF retido sobre resgates no mes (Resumo)"
   },
   "campos_calculo": {
     "rendimento_no_mes": {
@@ -26,25 +26,15 @@
       "source": "rendimento_no_mes",
       "manual": false
     },
-    "ir_saldo_final_atual": {
-      "label": "IR Saldo Final (atual)",
-      "source": "irrf_saldo_final_atual",
+    "irrf_retido_mes": {
+      "label": "IR retido sobre resgates no mes",
+      "source": "irrf_retido_mes",
       "manual": false
     },
-    "ir_saldo_final_anterior": {
-      "label": "IR Saldo Final (mes anterior)",
-      "source": "irrf_saldo_final_anterior",
-      "manual": true
-    },
-    "iof_saldo_final_atual": {
-      "label": "IOF Saldo Final (atual)",
-      "source": "iof_saldo_final_atual",
+    "iof_retido_mes": {
+      "label": "IOF retido sobre resgates no mes",
+      "source": "iof_retido_mes",
       "manual": false
-    },
-    "iof_saldo_final_anterior": {
-      "label": "IOF Saldo Final (mes anterior)",
-      "source": "iof_saldo_final_anterior",
-      "manual": true
     }
   },
   "lancamentos": {
@@ -54,13 +44,13 @@
       "debito": "1.1.01.03.097",
       "debito_cod_red": "20",
       "debito_desc": "Rendimentos a Apropriar",
-      "credito": "3.1.05.01.002",
+      "credito": "3.1.06.01.002",
       "credito_cod_red": "476",
       "credito_desc": "Juros de Aplicacoes Financeiras"
     },
     "irrf": {
       "historico": 592,
-      "historico_desc": "Provisao IRRF",
+      "historico_desc": "IRRF Retido s/ Resgates",
       "positivo": {
         "debito": "1.1.03.04.025",
         "debito_cod_red": "86",
@@ -76,7 +66,7 @@
     },
     "iof": {
       "historico": 593,
-      "historico_desc": "Provisao IOF",
+      "historico_desc": "IOF Retido s/ Resgates",
       "positivo": {
         "debito": "1.1.05.01.003",
         "debito_cod_red": "116",

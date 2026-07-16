@@ -107,16 +107,16 @@ def _parse_rende_facil(texto, caminho=""):
         mm = re.search(pat, texto, re.IGNORECASE)
         return br_to_float(mm.group(1)) if mm else 0.0
 
-    d["aplicacoes"] = g(r"Aplica\w+es no m\w+s:\s*R?\$?\s*([\d.]+,\d{2})")
-    d["resgates"] = g(r"Resgates l\w+quidos no m\w+s:\s*R?\$?\s*([\d.]+,\d{2})")
-    d["irrf_retido_mes"] = g(r"IR sobre resgates no m\w+s:\s*R?\$?\s*([\d.]+,\d{2})")
-    d["iof_retido_mes"] = g(r"IOF sobre resgates no m\w+s:\s*R?\$?\s*([\d.]+,\d{2})")
-    rendimento_mes = g(r"Rendimentos? no m\w+s:\s*R?\$?\s*([\d.]+,\d{2})")
+    d["aplicacoes"] = g(r"Aplica\w+es no m\w+s:[ \t]*R?\$?[ \t]*([\d.]+,\d{2})")
+    d["resgates"] = g(r"Resgates l\w+quidos no m\w+s:[ \t]*R?\$?[ \t]*([\d.]+,\d{2})")
+    d["irrf_retido_mes"] = g(r"IR sobre resgates no m\w+s:[ \t]*R?\$?[ \t]*([\d.]+,\d{2})")
+    d["iof_retido_mes"] = g(r"IOF sobre resgates no m\w+s:[ \t]*R?\$?[ \t]*([\d.]+,\d{2})")
+    rendimento_mes = g(r"Rendimentos? no m\w+s:[ \t]*R?\$?[ \t]*([\d.]+,\d{2})")
     d["campos_extra"]["rendimento_no_mes"] = rendimento_mes
     d["rendimentos_pagos_mes"] = rendimento_mes
 
     # Saldo bruto final (segundo 'Saldo bruto em')
-    saldos = re.findall(r"Saldo bruto em\s+\d{2}/\d{2}/\d{4}\s*R?\$?\s*([\d.]+,\d{2})", texto, re.IGNORECASE)
+    saldos = re.findall(r"Saldo bruto em\s+\d{2}/\d{2}/\d{4}[ \t]*R?\$?[ \t]*([\d.]+,\d{2})", texto, re.IGNORECASE)
     if len(saldos) >= 2:
         d["saldo_anterior"] = br_to_float(saldos[0])
         d["saldo_bruto"] = br_to_float(saldos[-1])
@@ -124,7 +124,7 @@ def _parse_rende_facil(texto, caminho=""):
         d["saldo_bruto"] = br_to_float(saldos[-1])
 
     # Linha 'Saldo Final' do historico: Capital, Rendimento, IR, IOF
-    m_sf = re.search(r"Saldo Final\s+R?\$?\s*([\d.]+,\d{2})\s+R?\$?\s*([\d.]+,\d{2})\s+R?\$?\s*([\d.]+,\d{2})\s+R?\$?\s*([\d.]+,\d{2})",
+    m_sf = re.search(r"Saldo Final[ \t]+R?\$?[ \t]*([\d.]+,\d{2})[ \t]+R?\$?[ \t]*([\d.]+,\d{2})[ \t]+R?\$?[ \t]*([\d.]+,\d{2})[ \t]+R?\$?[ \t]*([\d.]+,\d{2})",
                      texto, re.IGNORECASE)
     if m_sf:
         d["saldo_atual"] = br_to_float(m_sf.group(1))  # Capital
@@ -136,8 +136,9 @@ def _parse_rende_facil(texto, caminho=""):
     else:
         d["saldo_atual"] = d["saldo_bruto"]
 
-    # Fallback OCR por coordenadas quando regex falha (PDF escaneado)
-    if not rendimento_mes and caminho and _OCR_DISPONIVEL:
+    # Fallback OCR por coordenadas quando regex falha (PDF escaneado ou OCR embaralhado)
+    _precisa_fallback = (not rendimento_mes or not m_sf or len(saldos) < 2) and caminho and _OCR_DISPONIVEL
+    if _precisa_fallback:
         vals = _extrair_resumo_por_coordenadas(caminho)
         if vals.get("rendimento"):
             d["campos_extra"]["rendimento_no_mes"] = br_to_float(vals["rendimento"])
