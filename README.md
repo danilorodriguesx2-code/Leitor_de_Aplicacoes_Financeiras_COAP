@@ -1,122 +1,223 @@
-# 💰 Contábil Financeiro
+# Contábil Financeiro
 
-Aplicação **Streamlit** para processar extratos de aplicações financeiras de bancos
-brasileiros, identificar automaticamente o **banco/produto**, extrair os campos
-financeiros, calcular **rendimento, IRRF e IOF**, gerar os **lançamentos contábeis**
-e exportar para **Excel, CSV e TXT**.
+Aplicação Streamlit para processar extratos de aplicações financeiras, identificar banco e produto, extrair valores, calcular rendimentos e impostos, gerar lançamentos contábeis e exportar os resultados para Excel, CSV, TXT e CSV ERP.
 
-Sem banco de dados e sem microsserviços — tudo roda localmente, em memória/arquivos.
+O processamento é local. Os arquivos enviados não são transmitidos para serviços externos.
 
----
+## Escopo atual
 
-## ✅ Bancos e produtos suportados
+Bancos e produtos suportados:
 
-| Banco   | Produtos |
-|---------|----------|
-| Sicredi | Sicredinvest, Sicredinvest Evolutivo, Sicredinvest Automático, Poupança |
-| Sicoob  | RDC Flexível, RDC Automático |
-| Banco do Brasil | RF Simples Ágil, RF LP Corp Bancos, Rende Fácil, CDB DI |
-| Itaú    | Aplicação Automática Mais, Itauvest |
-| XP      | XP Investimentos (relatório XPerformance) — seleção do mês baseada na data de lançamentos informada |
+- Banco do Brasil: CDB DI, Rende Fácil, RF LP Corp Bancos e RF Simples Ágil.
+- Itaú: Aplic Aut Mais e Itauvest.
+- Sicoob: RDC Flexível e RDC Automático.
+- Sicredi: Sicredinvest, Sicredinvest Evolutivo, Sicredinvest Automático, Poupança Tradicional e Sicredinvest.
+- XP: XP Investimentos, incluindo seleção mensal pela data de lançamentos.
 
-Formatos aceitos: **PDF** (incluindo digitalizados via OCR), **XLS/XLSX**, **CSV**, **HTML**.
+Formatos aceitos:
 
----
+- PDF com texto nativo.
+- PDF digitalizado, mediante Tesseract OCR com idioma português.
+- PDF baixado com extensão `.aspx`, quando o conteúdo real começa com `%PDF-`.
+- XLS, XLSX, CSV, HTML e HTM.
+- O Itaú pode fornecer o Aplic Aut Mais como HTML exportado com extensão `.xls`; o conteúdo é detectado e lido como tabela.
 
-## 🧱 Estrutura do projeto
+## Arquitetura
 
-```
-contabil_financeiro/
-├── app/
-│   └── main.py            # Interface Streamlit
-├── parsers/               # Extração de campos por banco
-│   ├── sicredi.py
-│   ├── sicoob.py
-│   ├── bb.py
-│   ├── itau.py
-│   ├── xp.py
-│   └── __init__.py        # utilidades (br_to_float, norm, etc.)
-├── rules/                 # Regras contábeis em JSON (1 por produto)
-├── modules/
-│   ├── ocr.py             # extração de texto + OCR (tesseract)
-│   ├── identifier.py      # identificação automática do banco/produto
-│   ├── calculator.py      # cálculo de rendimento/IRRF/IOF + memória de cálculo
-│   ├── accounting.py      # geração dos lançamentos contábeis e conferência
-│   ├── export.py          # exportação Excel/CSV/TXT
-│   └── processor.py       # pipeline completo (arquivo → texto → regra → dados)
-├── extratos/              # uploads temporários (limpos automaticamente ao iniciar)
-├── output/                # exportações geradas
-├── requirements.txt
-└── README.md
+```text
+upload
+  -> modules/processor.py
+  -> extração nativa ou OCR
+  -> modules/identifier.py
+  -> parser do banco em parsers/
+  -> regra JSON em rules/
+  -> modules/calculator.py
+  -> modules/accounting.py
+  -> exportação em modules/export.py
 ```
 
----
+Diretórios principais:
 
-## ⚙️ Instalação
+- `app/main.py`: interface Streamlit.
+- `modules/`: OCR, pipeline, cálculos, contabilidade e exportação.
+- `parsers/`: parsers específicos de cada instituição.
+- `rules/`: regras contábeis por produto, sem credenciais.
+- `tests/`: testes automatizados e regressões de formatos reais.
+- `scripts/`: execução e verificação da aplicação na VPS.
+- `docs/`: operação, homologação e critérios de implantação.
+- `extratos/`: uploads temporários, limpos ao iniciar.
+- `output/`: arquivos gerados localmente, não versionados.
 
-### 1. Dependências do sistema (OCR)
+## Instalação local
 
-O OCR de PDFs digitalizados usa o **Tesseract** com o idioma português e o `pdftoppm` (Poppler):
+### Requisitos
+
+- Python 3.13 recomendado.
+- Git.
+- Dependências Python de `requirements.txt`.
+- Tesseract e idioma português para PDFs digitalizados.
+- Poppler é recomendado quando ferramentas externas de conversão de PDF forem necessárias.
+
+### Linux ou macOS
 
 ```bash
-# Debian / Ubuntu
+git clone https://github.com/danilorodriguesx2-code/Leitor_de_Aplicacoes_Financeiras_COAP.git
+cd Leitor_de_Aplicacoes_Financeiras_COAP
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+```
+
+Dependências OCR em Debian/Ubuntu:
+
+```bash
 sudo apt-get update
 sudo apt-get install -y tesseract-ocr tesseract-ocr-por poppler-utils
-
-# macOS (Homebrew)
-brew install tesseract tesseract-lang poppler
 ```
 
-> O app funciona sem o Tesseract para PDFs com texto nativo; o OCR só é necessário
-> para extratos digitalizados (imagem).
-
-### 2. Dependências Python
+Execução local:
 
 ```bash
-cd contabil_financeiro
-python3 -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-```
-
----
-
-## ▶️ Como executar
-
-```bash
-cd contabil_financeiro
 streamlit run app/main.py
 ```
 
-O Streamlit abrirá no navegador (por padrão em `http://localhost:8501`).
+A aplicação abre, por padrão, em `http://localhost:8501`.
 
-### Uso
+### Windows
 
-1. **Defina a data de lançamentos** na barra lateral — usada como referência para
-   selecionar o mês correto na tabela "Evolução Patrimonial" dos extratos XP.
-2. **Envie os extratos** (arraste e solte um ou vários arquivos).
-3. O app identifica o banco/produto. Se necessário, **selecione manualmente** o produto.
-4. **Extrato do mês anterior** (Sicredi): se o produto exigir saldos do mês anterior,
-   o app exibe um uploader — envie o PDF do período anterior para preenchimento
-   automático dos campos de provisão/rendimento, sem necessidade de digitação manual.
-5. Confira a **memória de cálculo**, os **lançamentos contábeis** e a **conferência de saldos**.
-6. **Baixe** o resultado em Excel, CSV ou TXT — individual ou consolidado.
+```powershell
+py -3.13 -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+streamlit run app/main.py
+```
 
----
+Instale o Tesseract para Windows e configure `TESSERACT_CMD` caso o executável não esteja no `PATH`.
 
-## 🧮 Regras contábeis
+## Execução na VPS
 
-Cada produto tem um arquivo JSON em `rules/` descrevendo:
+A aplicação deve permanecer restrita à rede privada. Não publique diretamente a porta do Streamlit no IP público.
 
-- contas de débito/crédito por tipo (rendimento, IRRF, IOF);
-- históricos contábeis (591 = rendimento, 592 = IRRF, 593 = IOF);
-- fórmulas de cálculo (avaliadas com segurança a partir dos campos extraídos);
-- tratamento de **estorno** (inverte débito/crédito quando o valor é negativo).
+Critérios mínimos de implantação:
 
-Para adicionar/ajustar um produto, edite o JSON correspondente — não é preciso mexer no código.
+1. Debian 12/13 ou Ubuntu 22.04/24.04.
+2. Python 3.13 disponível.
+3. Repositório clonado em um diretório persistente.
+4. Ambiente virtual separado do Python do sistema.
+5. Dependências instaladas dentro do ambiente virtual.
+6. Tesseract com `por.traineddata` disponível para extratos digitalizados.
+7. Tailscale conectado quando o acesso for privado.
+8. Processo vinculado a `127.0.0.1` ou ao endereço Tailscale, nunca ao IP público sem autenticação e HTTPS.
+9. Porta definida explicitamente, atualmente `8520` no ambiente COAP.
+10. Testes, compilação, health check e validação da interface concluídos antes do uso operacional.
 
----
+Procedimento detalhado para a VPS: [docs/DEPLOY_VPS.md](docs/DEPLOY_VPS.md).
 
-## 🔒 Privacidade
+Execução pelo script do projeto:
 
-Todo o processamento é local. Nenhum dado do extrato é enviado para serviços externos.
+```bash
+cd /opt/data/Leitor_de_Aplicacoes_Financeiras_COAP
+VENV_DIR=/opt/data/.venvs/leitor-financeiro \
+BIND_ADDRESS=127.0.0.1 PORT=8520 ./scripts/start_vps.sh
+```
+
+Para acesso privado via Tailscale, substitua `BIND_ADDRESS` pelo endereço Tailscale da VPS, sem usar o IP público.
+
+Verificação de disponibilidade:
+
+```bash
+./scripts/healthcheck.sh http://127.0.0.1:8520/
+```
+
+## Fluxo operacional
+
+1. Configure a data padrão dos lançamentos no painel.
+2. Envie um ou mais extratos.
+3. Confirme banco e produto identificados.
+4. Se o produto exigir, envie também o extrato anterior.
+5. Revise memória de cálculo, lançamentos e conferência de saldos.
+6. Gere os arquivos individualmente ou de forma consolidada.
+7. Para o ERP, valide o cabeçalho `LOT`, a competência, os totais e as linhas `CON` antes da importação.
+
+Procedimentos operacionais e troubleshooting: [docs/OPERACAO.md](docs/OPERACAO.md).
+
+## OCR
+
+O pipeline tenta primeiro extrair texto nativo. Quando o PDF não tem texto suficiente, renderiza as páginas e usa Tesseract.
+
+Variáveis opcionais:
+
+```bash
+export TESSERACT_CMD=/caminho/para/tesseract
+export TESSDATA_PREFIX=/caminho/para/tessdata
+export LD_LIBRARY_PATH=/caminho/para/libs:$LD_LIBRARY_PATH
+export TESSERACT_CONFIG="--psm 3"
+export OCR_DPI=160
+```
+
+O `OCR_DPI=160` é adequado para os extratos Sicoob RDC Flexível validados. Outros documentos podem exigir outro valor.
+
+Sem Tesseract, PDFs com texto nativo continuam funcionando. PDFs digitalizados serão sinalizados como não processados automaticamente.
+
+## Exportação ERP
+
+O CSV ERP utiliza o layout:
+
+- uma linha `LOT` por combinação de CNPJ e competência;
+- duas linhas `CON` por lançamento, débito e crédito;
+- um único cabeçalho no arquivo consolidado;
+- um único BOM UTF-8 no início do arquivo.
+
+Regra de competência:
+
+- lançamento no último dia do mês: preserva a data original;
+- lançamento em qualquer outro dia: utiliza a data padrão do cabeçalho do painel;
+- competências diferentes geram lotes diferentes, mesmo para o mesmo CNPJ.
+
+A aplicação Sicoob RDC Automático foi encerrada no mês 8. O painel exibe `Sicoob · RDC Automatico (Encerrada)` como lembrete visual. O `rule_key`, parser, regra contábil e cálculo permanecem inalterados.
+
+## Testes e validação
+
+Execute a suíte completa:
+
+```bash
+python -m pytest -q
+python -m compileall -q app modules parsers tests
+git diff --check
+```
+
+Critérios de aceite antes da operação:
+
+- todos os testes passam;
+- nenhum erro de compilação;
+- JSONs em `rules/` carregam corretamente;
+- aplicação inicia sem exceção;
+- health check retorna HTTP 200;
+- interface mostra upload e produtos suportados;
+- pelo menos um extrato nativo e um digitalizado são processados;
+- exportações são abertas e conferidas;
+- CSV ERP tem um único cabeçalho e totais conciliados;
+- acesso público à porta não é necessário nem permitido.
+
+O CI do GitHub executa a suíte em Python 3.13: [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+
+## Segurança e privacidade
+
+- Não versionar extratos reais, PDFs, planilhas, exportações, tokens, senhas, chaves ou arquivos `.env`.
+- Não executar macros ou conteúdo ativo de documentos.
+- Tratar uploads como dados não confiáveis.
+- Manter a aplicação na rede privada até existir autenticação pública, HTTPS e controle de acesso.
+- Conferir `git status`, `.gitignore` e o diff antes de publicar.
+
+## Contribuição
+
+Antes de criar um commit:
+
+```bash
+git status --short
+python -m pytest -q
+python -m compileall -q app modules parsers tests
+git diff --check
+```
+
+Descreva alterações de parser com um caso de regressão reproduzível. Alterações em `rules/` devem explicar o impacto contábil e ser revisadas antes da publicação.

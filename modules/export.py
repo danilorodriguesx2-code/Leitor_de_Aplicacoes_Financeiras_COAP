@@ -2,6 +2,7 @@
 from __future__ import annotations
 import io
 import csv
+import datetime as dt
 import pandas as pd
 
 
@@ -62,6 +63,38 @@ def exportar_csv(lancamentos: list) -> bytes:
     return buf.getvalue().encode("utf-8-sig")
 
 
+def _parse_data_br(value: str):
+    try:
+        return dt.datetime.strptime(str(value).strip(), "%d/%m/%Y").date()
+    except (TypeError, ValueError):
+        return None
+
+
+def _eh_ultimo_dia_mes(value: str) -> bool:
+    data = _parse_data_br(value)
+    if data is None:
+        return False
+    proximo_mes = data.replace(day=28) + dt.timedelta(days=4)
+    ultimo = proximo_mes - dt.timedelta(days=proximo_mes.day)
+    return data == ultimo
+
+
+def competencia_erp(lancamentos: list, data_padrao: str) -> str:
+    """Escolhe a competencia do LOT do ERP.
+
+    A data de origem so permanece quando todos os lancamentos do lote estao
+    no ultimo dia do respectivo mes. Caso contrario, usa a data padrao do
+    cabecalho do painel.
+    """
+    datas = [
+        str(l.get("data_ref") or l.get("data") or "").strip()
+        for l in lancamentos
+    ]
+    if datas and len(set(datas)) == 1 and _eh_ultimo_dia_mes(datas[0]):
+        return datas[0]
+    return str(data_padrao or "").strip()
+
+
 def exportar_csv_erp(lancamentos: list, data_ref: str, cnpj: str, lote: str = "900", filial: str = "1") -> bytes:
     """
     Layout para importacao direta no ERP.
@@ -105,6 +138,23 @@ def exportar_csv_erp(lancamentos: list, data_ref: str, cnpj: str, lote: str = "9
         buf.write(f"CON;;;{''.rjust(11)};{filial};{cred};{valor_s};C;{hist};{compl};;;{cnpj_pad};;\n")
 
     return buf.getvalue().encode("utf-8-sig")
+
+
+def consolidar_csv_erp(partes: list[bytes]) -> bytes:
+    """Une lotes ERP mantendo um unico cabecalho e um unico BOM."""
+    header = ""
+    linhas = []
+    for parte in partes:
+        texto = parte.decode("utf-8-sig")
+        bloco = texto.splitlines()
+        if not bloco:
+            continue
+        if not header:
+            header = bloco[0]
+        linhas.extend(linha for linha in bloco[1:] if linha.strip())
+    if not header:
+        return b""
+    return ("\n".join([header, *linhas]) + "\n").encode("utf-8-sig")
 
 
 def exportar_txt(lancamentos: list) -> bytes:

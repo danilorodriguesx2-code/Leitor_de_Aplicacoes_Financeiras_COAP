@@ -8,6 +8,7 @@ try:
     import fitz
     import pytesseract
     from PIL import Image
+    pytesseract.get_tesseract_version()
     _OCR_DISPONIVEL = True
 except Exception:
     _OCR_DISPONIVEL = False
@@ -116,7 +117,7 @@ def _parse_rende_facil(texto, caminho=""):
     d["rendimentos_pagos_mes"] = rendimento_mes
 
     # Saldo bruto final (segundo 'Saldo bruto em')
-    saldos = re.findall(r"Saldo bruto em\s+\d{2}/\d{2}/\d{4}[ \t]*R?\$?[ \t]*([\d.]+,\d{2})", texto, re.IGNORECASE)
+    saldos = re.findall(r"Saldo bruto em\s+\d{2}/\d{2}/\d{4}:?[ \t]*R?\$?[ \t]*([\d.]+,\d{2})", texto, re.IGNORECASE)
     if len(saldos) >= 2:
         d["saldo_anterior"] = br_to_float(saldos[0])
         d["saldo_bruto"] = br_to_float(saldos[-1])

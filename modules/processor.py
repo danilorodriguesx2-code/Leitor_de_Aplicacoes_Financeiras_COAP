@@ -46,6 +46,20 @@ def listar_regras() -> list:
     return regras
 
 
+def _detectar_extensao(caminho: str, nome_arquivo: str) -> str:
+    """Determina o tipo real, aceitando PDF baixado com extensao .aspx."""
+    ext = os.path.splitext(nome_arquivo or caminho)[1].lower().lstrip(".")
+    if ext == "pdf":
+        return ext
+    try:
+        with open(caminho, "rb") as f:
+            if f.read(5) == b"%PDF-":
+                return "pdf"
+    except OSError:
+        pass
+    return ext
+
+
 def _texto_de_planilha_ou_csv(caminho: str, ext: str) -> str:
     """Extrai um texto representativo de XLS/HTML/CSV/XLSX para identificacao."""
     import pandas as pd
@@ -82,7 +96,7 @@ def processar_arquivo(caminho: str, nome_arquivo: str = "", forcar_rule_key: str
       - erro: mensagem (se falhou)
     """
     nome_arquivo = nome_arquivo or os.path.basename(caminho)
-    ext = os.path.splitext(nome_arquivo)[1].lower().lstrip(".")
+    ext = _detectar_extensao(caminho, nome_arquivo)
 
     def _resultado_vazio():
         return {

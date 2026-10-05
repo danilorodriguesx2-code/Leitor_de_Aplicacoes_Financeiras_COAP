@@ -24,7 +24,7 @@ if BASE_DIR not in sys.path:
 import pandas as pd
 import streamlit as st
 
-from modules import processor, calculator, accounting, export
+from modules import processor, calculator, accounting, export, previous
 
 EXTRATOS_DIR = os.path.join(BASE_DIR, "extratos")
 OUTPUT_DIR = os.path.join(BASE_DIR, "output")
@@ -73,11 +73,19 @@ def _regras_cache():
     return processor.listar_regras()
 
 
+def produto_exibicao(produto: str, rule_key: str = "") -> str:
+    """Nome visual do painel, sem alterar regra, parser ou exportacao."""
+    if rule_key == "sicoob_rdc_automatico":
+        return "RDC Automatico (Encerrada)"
+    return produto
+
+
 def opcoes_regras():
     regras = _regras_cache()
     opcoes = {"(identificar automaticamente)": None}
     for r in regras:
-        rotulo = f"{r['banco']} - {r['produto']}  [{r['rule_key']}]"
+        produto = produto_exibicao(r["produto"], r["rule_key"])
+        rotulo = f"{r['banco']} - {produto}  [{r['rule_key']}]"
         opcoes[rotulo] = r["rule_key"]
     return opcoes
 
@@ -106,7 +114,8 @@ with st.sidebar:
         irrf = "IRRF" if r.get("tem_irrf") else ""
         iof = "IOF" if r.get("tem_iof") else ""
         tags = " ".join([t for t in (irrf, iof) if t]) or "sem impostos"
-        st.markdown(f"- **{r['banco']}** · {r['produto']}  \n  <small>{tags}</small>", unsafe_allow_html=True)
+        produto = produto_exibicao(r["produto"], r["rule_key"])
+        st.markdown(f"- **{r['banco']}** · {produto}  \n  <small>{tags}</small>", unsafe_allow_html=True)
     st.divider()
     st.caption(
         "OCR automatico para PDFs digitalizados (requer tesseract-ocr + idioma por). "
@@ -115,8 +124,8 @@ with st.sidebar:
 
 st.markdown("### 1. Envie os extratos")
 arquivos = st.file_uploader(
-    "Arraste e solte os arquivos (PDF, XLS, XLSX, CSV, HTML). Varios arquivos sao aceitos.",
-    type=["pdf", "xls", "xlsx", "csv", "html", "htm"],
+    "Arraste e solte os arquivos (PDF, PDF com extensao .aspx, XLS, XLSX, CSV, HTML). Varios arquivos sao aceitos.",
+    type=["pdf", "aspx", "xls", "xlsx", "csv", "html", "htm"],
     accept_multiple_files=True,
 )
 
@@ -171,7 +180,8 @@ for idx, arq in enumerate(arquivos):
         with col_info:
             if any(r["sucesso"] for r in resultados):
                 nomes = " + ".join(
-                    f"{r['banco']} · {r['produto']}" for r in resultados if r["sucesso"]
+                    f"{r['banco']} · {produto_exibicao(r['produto'], r.get('rule_key', ''))}"
+                    for r in resultados if r["sucesso"]
                 )
                 st.success(f"**{nomes}**  \nMetodo: {resultados[0]['metodo']}")
             else:
@@ -198,7 +208,10 @@ for idx, arq in enumerate(arquivos):
             rule = res["rule"]
 
             if len(resultados) > 1:
-                st.markdown(f"**▶ {rule['banco']} · {rule['produto']}**")
+                st.markdown(
+                    f"**▶ {rule['banco']} · "
+                    f"{produto_exibicao(rule['produto'], rule.get('rule_key', ''))}**"
+                )
 
             if dados.get("aviso"):
                 st.warning(f"⚠️ {dados['aviso']}")
@@ -240,7 +253,14 @@ for idx, arq in enumerate(arquivos):
                                 with open(prev_path, "wb") as f:
                                     f.write(prev_file.getbuffer())
 
-                            prev_results = processor.processar_arquivo(prev_path, prev_file.name)
+                            prev_results = processor.processar_arquivo(
+                                prev_path,
+                                prev_file.name,
+                                # O arquivo anterior deve ser interpretado pela
+                                # mesma regra do arquivo atual, mesmo que o nome
+                                # esteja truncado ou não contenha "Itauvest".
+                                forcar_rule_key=rule.get("rule_key"),
+                            )
                             try:
                                 os.remove(prev_path)
                             except Exception:
@@ -253,20 +273,10 @@ for idx, arq in enumerate(arquivos):
                                     break
 
                             if prev_dados:
-                                field_map = {
-                                    "rend_prov_anterior": "rendimentos_provisionados_atual",
-                                    "prov_irrf_anterior": "provisao_irrf_atual",
-                                    "prov_iof_anterior": "provisao_iof_atual",
-                                }
-                                extra = prev_dados.get("campos_extra", {}) or {}
-                                vals = {}
-                                for ant_nome, source in field_map.items():
-                                    if ant_nome in anterior_fields:
-                                        v = prev_dados.get(source) or extra.get(source) or 0.0
-                                        try:
-                                            vals[ant_nome] = float(v)
-                                        except (ValueError, TypeError):
-                                            vals[ant_nome] = 0.0
+                                vals = previous.extrair_overrides_anterior(
+                                    anterior_fields,
+                                    prev_dados,
+                                )
 
                                 if vals:
                                     overrides.update(vals)
@@ -447,16 +457,19 @@ if todos_lancamentos:
         use_container_width=True,
     )
 
-    # Agrupa lancamentos por CNPJ para gerar LOT separados por cnpj
+    # Agrupa por CNPJ e competencia efetiva para gerar LOTs separados.
+    # Quando a origem nao esta no ultimo dia do mes, a competencia passa a
+    # ser a data padrao informada no cabecalho do painel.
+    data_padrao_erp = data_lcto.strftime("%d/%m/%Y")
     grupos = {}
     for l in todos_lancamentos:
         cnpj = l.get("cnpj", "")
-        grupos.setdefault(cnpj, []).append(l)
+        competencia = export.competencia_erp([l], data_padrao_erp)
+        grupos.setdefault((cnpj, competencia), []).append(l)
     partes_erp = []
-    for cnpj, lote_lancs in grupos.items():
-        data_ref = lote_lancs[0].get("data_ref", "")
-        partes_erp.append(export.exportar_csv_erp(lote_lancs, data_ref, cnpj))
-    csv_erp_bytes = b"".join(partes_erp) if partes_erp else b""
+    for (cnpj, competencia), lote_lancs in grupos.items():
+        partes_erp.append(export.exportar_csv_erp(lote_lancs, competencia, cnpj))
+    csv_erp_bytes = export.consolidar_csv_erp(partes_erp)
 
     ccols[3].download_button(
         "⬇️ CSV ERP",

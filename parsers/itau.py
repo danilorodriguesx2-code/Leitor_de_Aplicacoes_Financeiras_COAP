@@ -66,12 +66,111 @@ def _parse_itauvest(texto):
     return d
 
 
-# ---------------- Aplic Aut Mais (planilha) ----------------
+# ---------------- Aplic Aut Mais (PDF/XLS/HTML) ----------------
+def _parse_aplic_aut_mais_pdf(texto: str) -> dict:
+    """Extrai o layout PDF do extrato consolidado de movimentacao."""
+    d = campo_padrao("Itau", "Aplic Aut Mais", "itau_aplic_aut_mais", "")
+    linhas = [linha.strip() for linha in (texto or "").splitlines() if linha.strip()]
+    data_re = re.compile(r"^\d{2}/\d{2}/\d{4}$")
+    valor_re = re.compile(r"^[\d.]+,\d{2}$")
+    date_line_re = re.compile(r"^(\d{2}/\d{2}/\d{4})(?:\s+(.*))?$")
+    linhas_data = []
+
+    for i, linha in enumerate(linhas):
+        match = date_line_re.fullmatch(linha)
+        if not match:
+            continue
+        valores = [
+            br_to_float(valor)
+            for valor in re.findall(r"[\d.]+,\d{2}", match.group(2) or "")
+        ]
+        # pdfplumber pode colocar a data e os valores na mesma linha ou
+        # separar cada valor em uma linha. Suporta os dois formatos.
+        if not valores:
+            j = i + 1
+            while j < len(linhas) and not data_line_re.fullmatch(linhas[j]):
+                if norm(linhas[j]).startswith("ACUM") or linhas[j].startswith("*"):
+                    break
+                if not valor_re.fullmatch(linhas[j]):
+                    break
+                valores.append(br_to_float(linhas[j]))
+                j += 1
+        if len(valores) >= 5:
+            linhas_data.append((match.group(1), valores))
+
+    if len(linhas_data) < 2:
+        d["avisos"].append(
+            "Nao encontrei duas linhas de posicao no PDF do Aplic Aut Mais."
+        )
+        return d
+
+    data_anterior, anterior = linhas_data[0]
+    data_atual, atual = linhas_data[-1]
+    d["data_referencia"] = data_atual
+
+    # Linhas de posicao: Principal, Bruto, IOF, IRRF, Liquido.
+    d["saldo_anterior"] = anterior[0]
+    d["saldo_atual"] = atual[0]
+    d["saldo_bruto"] = atual[1]
+    d["provisao_iof_atual"] = atual[2]
+    d["provisao_irrf_atual"] = atual[3]
+    d["provisao_iof_anterior"] = anterior[2]
+    d["provisao_irrf_anterior"] = anterior[3]
+    d["rendimentos_provisionados_atual"] = round(atual[1] - atual[0], 2)
+    d["rendimentos_provisionados_anterior"] = round(anterior[1] - anterior[0], 2)
+    d["campos_extra"]["render_atual"] = d["rendimentos_provisionados_atual"]
+    d["campos_extra"]["render_anterior"] = d["rendimentos_provisionados_anterior"]
+
+    # Acum. Mes: Aplicacoes, principal resgatado, bruto resgatado,
+    # IOF, IRRF, rendimento bruto e rendimento liquido.
+    for i, linha in enumerate(linhas):
+        if not norm(linha).startswith("ACUM"):
+            continue
+        acumulado = [
+            br_to_float(valor)
+            for valor in re.findall(r"[\d.]+,\d{2}", linha)
+        ]
+        if not acumulado:
+            for seguinte in linhas[i + 1:]:
+                if seguinte.startswith("*") or not valor_re.fullmatch(seguinte):
+                    break
+                acumulado.append(br_to_float(seguinte))
+        if len(acumulado) >= 7:
+            d["aplicacoes"] = acumulado[0]
+            d["resgates"] = acumulado[2]
+            d["iof_retido_mes"] = acumulado[3]
+            d["irrf_retido_mes"] = acumulado[4]
+            d["rendimentos_pagos_mes"] = acumulado[5]
+            d["campos_extra"]["rendimento_pago_liquido"] = acumulado[6]
+        else:
+            d["avisos"].append("Linha Acum. Mes incompleta no PDF.")
+        break
+
+    return d
+
+
+def _caminho_e_pdf(caminho: str) -> bool:
+    if str(caminho).lower().endswith(".pdf"):
+        return True
+    try:
+        with open(caminho, "rb") as f:
+            return f.read(5) == b"%PDF-"
+    except OSError:
+        return False
+
+
 def _parse_aplic_aut_mais(caminho, texto=""):
+    # O Itaú também entrega este extrato como PDF, às vezes com extensao
+    # incorreta (.aspx). Nesse formato o texto nativo e suficiente e nao ha
+    # motivo para tentar ler o arquivo como HTML/XLS.
+    texto_n = norm(texto)
+    if _caminho_e_pdf(caminho) and "APLIC AUT MAIS" in texto_n and "MOVIMENTACAO EM" in texto_n:
+        return _parse_aplic_aut_mais_pdf(texto)
+
     import pandas as pd
     d = campo_padrao("Itau", "Aplic Aut Mais", "itau_aplic_aut_mais", "")
     try:
-        tabelas = pd.read_html(caminho, thousands=".", decimal=",")
+        tabelas = pd.read_html(caminho, thousands=None, decimal=",")
         df = tabelas[0]
     except Exception as e:
         d["avisos"].append(f"Falha ao ler planilha Itau: {e}")

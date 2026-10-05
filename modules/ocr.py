@@ -10,6 +10,7 @@ Estrategia:
 from __future__ import annotations
 import io
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -17,9 +18,18 @@ logger = logging.getLogger(__name__)
 _MIN_TEXT_CHARS = 30
 
 
+def _configurar_tesseract(pytesseract):
+    """Aponta o pytesseract para uma instalacao configurada pelo ambiente."""
+    comando = os.environ.get("TESSERACT_CMD")
+    if comando:
+        pytesseract.pytesseract.tesseract_cmd = comando
+    return pytesseract
+
+
 def _tesseract_disponivel() -> bool:
     try:
-        import pytesseract  # noqa
+        import pytesseract
+        _configurar_tesseract(pytesseract)
         pytesseract.get_tesseract_version()
         return True
     except Exception as e:  # pragma: no cover
@@ -64,7 +74,10 @@ def extrair_texto_pdf(caminho: str) -> dict:
             ),
         }
 
-    texto_ocr, paginas_ocr = _aplicar_ocr(caminho)
+    texto_ocr, paginas_ocr = _aplicar_ocr(
+        caminho,
+        dpi=int(os.environ.get("OCR_DPI", "220")),
+    )
     return {
         "texto": texto_ocr,
         "paginas": paginas_ocr,
@@ -108,16 +121,18 @@ def _aplicar_ocr(caminho: str, dpi: int = 220, lang: str = "por"):
     import pytesseract
     from PIL import Image
 
+    _configurar_tesseract(pytesseract)
+    config = os.environ.get("TESSERACT_CONFIG", "--psm 3")
     paginas = []
     doc = fitz.open(caminho)
     for page in doc:
         pix = page.get_pixmap(dpi=dpi)
         img = Image.open(io.BytesIO(pix.tobytes("png")))
         try:
-            txt = pytesseract.image_to_string(img, lang=lang)
+            txt = pytesseract.image_to_string(img, lang=lang, config=config)
         except Exception:
             # idioma 'por' pode nao estar instalado -> usa default
-            txt = pytesseract.image_to_string(img)
+            txt = pytesseract.image_to_string(img, config=config)
         paginas.append(txt or "")
     doc.close()
     return "\n".join(paginas), paginas
